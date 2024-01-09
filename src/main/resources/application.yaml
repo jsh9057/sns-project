@@ -12,3 +12,8 @@ spring.datasource:
   password: ${DATASOURCE_PASSWORD}
   platform: postgres
   driver-class-name: org.postgresql.Driver
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  # 30 days
+  token.expired-time-ms: 2592000000
