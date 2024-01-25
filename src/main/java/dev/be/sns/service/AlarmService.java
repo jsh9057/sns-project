@@ -2,7 +2,13 @@ package dev.be.sns.service;
 
 import dev.be.sns.exception.ErrorCode;
 import dev.be.sns.exception.SnsApplicationException;
+import dev.be.sns.model.AlarmArgs;
+import dev.be.sns.model.AlarmType;
+import dev.be.sns.model.entity.AlarmEntity;
+import dev.be.sns.model.entity.UserEntity;
+import dev.be.sns.repository.AlarmEntityRepository;
 import dev.be.sns.repository.EmitterRepository;
+import dev.be.sns.repository.UserEntityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,13 +24,19 @@ public class AlarmService {
     private final static Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
     private final static String ALARM_NAME = "alarm";
     private final EmitterRepository emitterRepository;
+    private final AlarmEntityRepository alarmEntityRepository;
+    private final UserEntityRepository userEntityRepository;
 
-    public void send(Integer alarmId, Integer userId) {
-        emitterRepository.get(userId).ifPresentOrElse(sseEmitter -> {
+    public void send(AlarmType type, AlarmArgs arg, Integer receiverUserId) {
+        UserEntity user = userEntityRepository.findById(receiverUserId).orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND));
+        // alarm save
+        AlarmEntity alarmEntity = alarmEntityRepository.save(AlarmEntity.of(user, type, arg));
+
+        emitterRepository.get(receiverUserId).ifPresentOrElse(sseEmitter -> {
             try {
-                sseEmitter.send(SseEmitter.event().id(alarmId.toString()).name(ALARM_NAME).data("new alarm"));
+                sseEmitter.send(SseEmitter.event().id(alarmEntity.getId().toString()).name(ALARM_NAME).data("new alarm"));
             }catch (IOException e){
-                emitterRepository.delete(userId);
+                emitterRepository.delete(receiverUserId);
                 throw new SnsApplicationException(ErrorCode.ALARM_CONNECT_ERROR);
             }
         }, () -> log.info("No emitter founded"));

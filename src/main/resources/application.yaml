@@ -20,3 +20,26 @@ jwt:
 
 spring.redis.url: ${REDIS_URL}
 
+
+spring:
+  kafka:
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: SCRAM-SHA-256
+      sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username=${CLOUDKARAFKA_USERNAME} password=${CLOUDKARAFKA_PASSWORD};
+    consumer:
+      properties.spring.json.trusted.packages: "*"
+      bootstrap-servers: ${BOOTSTRAP_SERVER1}, ${BOOTSTRAP_SERVER2}, ${BOOTSTRAP_SERVER3}
+      group-id: alarm
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.IntegerDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    listener:
+      ack-mode: MANUAL
+    producer:
+      bootstrap-servers: ${BOOTSTRAP_SERVER1}, ${BOOTSTRAP_SERVER2}, ${BOOTSTRAP_SERVER3}
+      key-serializer: org.apache.kafka.common.serialization.IntegerSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties.enable.idempotence: false
+    topic:
+      alarm: ${TOPIC_ALARM}
